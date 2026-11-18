@@ -269,7 +269,7 @@ from OpenSSL import crypto
 print("Python syntax and runtime dependency imports passed.")
 PY
 
-install -m 0755 "$ASSET_DIR/scripts/run_panel.py" "$PANEL_ROOT/run_panel.py"
+install -m 0755 "$ASSET_DIR/scripts/run_panel.py" "$PANEL_ROOT/BT-Panel-systemd.py"
 install -m 0755 "$ASSET_DIR/scripts/run_task.py" "$PANEL_ROOT/run_task.py"
 install -m 0644 "$ASSET_DIR/systemd/bt.service" /etc/systemd/system/bt.service
 install -m 0644 "$ASSET_DIR/systemd/bt-task.service" /etc/systemd/system/bt-task.service
