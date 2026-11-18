@@ -67,7 +67,7 @@ import flask, werkzeug, gevent, geventwebsocket.handler, flask_sockets, flask_co
 from OpenSSL import crypto
 print("Runtime checks passed.")
 PY
-install -m 0755 "$TMP/scripts/run_panel.py" "$P/run_panel.py"
+install -m 0755 "$TMP/scripts/run_panel.py" "$P/BT-Panel-systemd.py"
 install -m 0755 "$TMP/scripts/run_task.py" "$P/run_task.py"
 install -m 0644 "$TMP/systemd/bt.service" /etc/systemd/system/bt.service
 install -m 0644 "$TMP/systemd/bt-task.service" /etc/systemd/system/bt-task.service
