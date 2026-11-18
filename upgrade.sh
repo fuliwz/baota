@@ -13,6 +13,8 @@ SUCCESS=0
 
 rollback() {
   rc=$?
+  if [[ $# -gt 0 ]]; then rc=$1; fi
+  [[ "$rc" -ne 0 ]] || rc=1
   if [[ "$SUCCESS" != 1 ]]; then
     systemctl stop bt-task bt >/dev/null 2>&1 || true
     rm -rf "$P"
@@ -69,12 +71,17 @@ install -m 0644 "$TMP/systemd/bt-task.service" /etc/systemd/system/bt-task.servi
 systemctl daemon-reload
 systemctl start bt
 sleep 3
-systemctl is-active --quiet bt || { journalctl -u bt -n 80 --no-pager; false; }
+if ! systemctl is-active --quiet bt; then journalctl -u bt -n 80 --no-pager; rollback 1; fi
 systemctl start bt-task
 sleep 2
-systemctl is-active --quiet bt-task || { journalctl -u bt-task -n 80 --no-pager; false; }
+if ! systemctl is-active --quiet bt-task; then journalctl -u bt-task -n 80 --no-pager; rollback 1; fi
 PORT=$(cat "$P/data/port.pl")
-curl --silent --show-error --max-time 10 "http://127.0.0.1:$PORT/service_status" | grep -q True
+HOST=127.0.0.1
+[[ -f "$P/data/ipv6.pl" ]] && HOST='[::1]'
+SCHEME=http
+CURL_ARGS=()
+if [[ -f "$P/data/ssl.pl" && -f "$P/ssl/privateKey.pem" && -f "$P/ssl/certificate.pem" && ! -f "$P/data/debug.pl" ]]; then SCHEME=https; CURL_ARGS=(-k); fi
+curl --silent --show-error --max-time 10 "${CURL_ARGS[@]}" "$SCHEME://$HOST:$PORT/service_status" | grep -q True
 SUCCESS=1
 rm -rf "$TMP"
 trap - ERR
