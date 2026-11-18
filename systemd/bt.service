@@ -4,7 +4,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/www/server/panel
-ExecStart=/www/server/panel/pyenv/bin/python /www/server/panel/run_panel.py
+ExecStart=/www/server/panel/pyenv/bin/python /www/server/panel/BT-Panel-systemd.py
 Restart=on-failure
 RestartSec=5
 User=root
