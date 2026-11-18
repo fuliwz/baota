@@ -270,9 +270,17 @@ systemctl is-active --quiet bt.service || { journalctl -u bt.service -n 80 --no-
 systemctl enable --now bt-task.service
 sleep 2
 systemctl is-active --quiet bt-task.service || { journalctl -u bt-task.service -n 80 --no-pager; die "任务服务启动失败。"; }
-curl --silent --show-error --max-time 10 "http://127.0.0.1:$PANEL_PORT/service_status" | grep -q True || {
+HEALTH_HOST="127.0.0.1"
+[[ -f "$PANEL_ROOT/data/ipv6.pl" ]] && HEALTH_HOST="[::1]"
+HEALTH_SCHEME="http"
+HEALTH_CURL_ARGS=()
+if [[ -f "$PANEL_ROOT/data/ssl.pl" && -f "$PANEL_ROOT/ssl/privateKey.pem" && -f "$PANEL_ROOT/ssl/certificate.pem" && ! -f "$PANEL_ROOT/data/debug.pl" ]]; then
+  HEALTH_SCHEME="https"
+  HEALTH_CURL_ARGS=(-k)
+fi
+curl --silent --show-error --max-time 10 "${HEALTH_CURL_ARGS[@]}" "$HEALTH_SCHEME://$HEALTH_HOST:$PANEL_PORT/service_status" | grep -q True || {
   journalctl -u bt.service -n 80 --no-pager
-  die "面板 HTTP 健康检查失败。"
+  die "面板健康检查失败。"
 }
 RUNTIME_DEPLOYED=0
 trap on_error ERR
