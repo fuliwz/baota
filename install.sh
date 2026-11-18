@@ -52,30 +52,29 @@ curl --fail --location --retry 3 --connect-timeout 20 --max-time 900 \
   || die "下载失败。请确认 GitHub Release 资产已发布，或设置 PANEL_ARCHIVE_URL。"
 
 [[ -s "$ARCHIVE" ]] || die "下载文件为空。"
-unzip -tq "$ARCHIVE" >/dev/null || die "ZIP 完整性检查失败。"
-
+command -v python3 >/dev/null 2>&1 || die "缺少 python3。"
 mkdir -p "$EXTRACT_DIR"
-unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
 
-[[ -f "$EXTRACT_DIR/panel/BT-Panel" ]] || die "归档缺少 panel/BT-Panel。"
-[[ -f "$EXTRACT_DIR/panel/BT-Task" ]] || die "归档缺少 panel/BT-Task。"
-[[ -f "$EXTRACT_DIR/panel/requirements.txt" ]] || die "归档缺少 panel/requirements.txt。"
-[[ -f "$EXTRACT_DIR/panel/data/port.pl" ]] || die "归档缺少 panel/data/port.pl。"
-
-# 拒绝绝对路径、上级目录及符号链接成员，避免 ZIP Slip / 链接覆盖风险。
+# Validate archive member paths and reject symlinks before extraction.
 python3 - "$ARCHIVE" <<'PY'
 import sys, zipfile
-archive = sys.argv[1]
-with zipfile.ZipFile(archive) as zf:
-    for info in zf.infolist():
-        name = info.filename.replace("\\", "/")
-        parts = name.split("/")
-        if name.startswith("/") or any(p == ".." for p in parts):
-            raise SystemExit("拒绝包含路径穿越的 ZIP 成员: " + info.filename)
-        mode = (info.external_attr >> 16) & 0o170000
+with zipfile.ZipFile(sys.argv[1]) as z:
+    bad = []
+    for i in z.infolist():
+        n = i.filename.replace("\\", "/")
+        if n.startswith("/") or any(p == ".." for p in n.split("/")):
+            bad.append(i.filename)
+        mode = (i.external_attr >> 16) & 0o170000
         if mode == 0o120000:
-            raise SystemExit("拒绝包含符号链接的 ZIP 成员: " + info.filename)
+            bad.append(i.filename)
+    if bad:
+        raise SystemExit("拒绝危险 ZIP 成员: " + ", ".join(bad[:10]))
 PY
+unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
+
+for f in panel/BT-Panel panel/BT-Task panel/requirements.txt panel/data/port.pl; do
+  [[ -f "$EXTRACT_DIR/$f" ]] || die "归档缺少必要文件：$f"
+done
 
 # 记录旧版启动与依赖特征，明确阻止未经验证的 Python 3.12 直接启动。
 if head -n 1 "$EXTRACT_DIR/panel/BT-Panel" | grep -qE '^#!/usr/bin/python([[:space:]]|$)'; then
