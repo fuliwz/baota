@@ -144,6 +144,9 @@ OLD_BT_ACTIVE=0
 OLD_TASK_ACTIVE=0
 if systemctl is-active --quiet bt.service 2>/dev/null; then OLD_BT_ACTIVE=1; fi
 if systemctl is-active --quiet bt-task.service 2>/dev/null; then OLD_TASK_ACTIVE=1; fi
+if [[ "$OLD_BT_ACTIVE" == 1 || "$OLD_TASK_ACTIVE" == 1 ]]; then
+  systemctl stop bt-task.service bt.service 2>/dev/null || true
+fi
 if [[ -e "$PANEL_INSTALL_DIR" ]]; then
   [[ -d "$PANEL_INSTALL_DIR" ]] || die "安装目标存在但不是目录，拒绝覆盖：$PANEL_INSTALL_DIR"
   log "检测到已有面板目录，先停止旧面板服务。"
