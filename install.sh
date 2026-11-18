@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 umask 077
 
-# 宝塔 7.4.0 文件部署器（多发行版 Linux；运行兼容性需单独验证）
-# 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
+# 宝塔 Linux Panel 7.4.0 自定义运行时安装器（开发分支）
+# 首批运行时范围：systemd + CPython 3.10/3.11；未验证平台会拒绝启动。
 
 RELEASE_TAG="v7.4.0"
 REPO="fuliwz/baota"
@@ -86,7 +86,7 @@ install_prerequisites
 
 log "检测到系统：$OS_PRETTY"
 log "系统标识：$OS_ID $OS_VERSION；架构：$ARCH；包管理器：${PKG_MANAGER:-未检测到}"
-log "注意：当前安装器仅负责安全部署面板文件，不代表该旧版面板已兼容此 Linux 发行版。"
+log "安装器将继续执行 Python 版本、依赖、语法、服务和 HTTP 健康检查；未通过时会停止并尝试回滚。"
 
 [[ "$PANEL_PORT" =~ ^[0-9]{1,5}$ ]] || die "PANEL_PORT 必须是 1-65535 的数字。"
 (( PANEL_PORT >= 1 && PANEL_PORT <= 65535 )) || die "PANEL_PORT 超出范围。"
