@@ -13,6 +13,7 @@ SUCCESS=0
 
 rollback() {
   rc=$?
+  trap - ERR
   if [[ $# -gt 0 ]]; then rc=$1; fi
   [[ "$rc" -ne 0 ]] || rc=1
   if [[ "$SUCCESS" != 1 ]]; then
