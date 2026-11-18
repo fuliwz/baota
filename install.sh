@@ -246,6 +246,7 @@ log "创建独立 Python 虚拟环境并安装锁定依赖。"
 "$PYTHON_BIN" -m venv "$PANEL_ROOT/pyenv"
 "$PANEL_ROOT/pyenv/bin/python" -m pip install --upgrade "pip<25" "setuptools<76" wheel
 "$PANEL_ROOT/pyenv/bin/pip" install --prefer-binary -r "$ASSET_DIR/requirements-py310.txt"
+"$PANEL_ROOT/pyenv/bin/pip" check
 
 log "执行 Python 语法和关键依赖检查。"
 "$PANEL_ROOT/pyenv/bin/python" - <<'PY'
