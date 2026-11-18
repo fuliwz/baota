@@ -72,7 +72,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 PY
 unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
 
-for f in panel/BT-Panel panel/BT-Task panel/requirements.txt panel/data/port.pl; do
+for f in panel/BT-Panel panel/BT-Task panel/requirements.txt; do
   [[ -f "$EXTRACT_DIR/$f" ]] || die "归档缺少必要文件：$f"
 done
 
