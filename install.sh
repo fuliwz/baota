@@ -95,6 +95,7 @@ log "归档结构检查通过。开始部署文件（不启动未经验证的旧
 mkdir -p /www/server /www/wwwroot /www/wwwlogs /www/backup/database /www/backup/site
 
 if [[ -e "$PANEL_INSTALL_DIR" ]]; then
+  [[ -d "$PANEL_INSTALL_DIR" ]] || die "安装目标存在但不是目录，拒绝覆盖：$PANEL_INSTALL_DIR"
   BACKUP_DIR="/www/server/panel.backup.$(date +%Y%m%d%H%M%S)"
   log "备份现有面板目录到：$BACKUP_DIR"
   mv "$PANEL_INSTALL_DIR" "$BACKUP_DIR"
