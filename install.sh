@@ -140,6 +140,10 @@ fi
 log "归档结构检查通过。开始部署文件（不启动未经验证的旧版程序）。"
 mkdir -p /www/server /www/wwwroot /www/wwwlogs /www/backup/database /www/backup/site
 
+OLD_BT_ACTIVE=0
+OLD_TASK_ACTIVE=0
+if systemctl is-active --quiet bt.service 2>/dev/null; then OLD_BT_ACTIVE=1; fi
+if systemctl is-active --quiet bt-task.service 2>/dev/null; then OLD_TASK_ACTIVE=1; fi
 if [[ -e "$PANEL_INSTALL_DIR" ]]; then
   [[ -d "$PANEL_INSTALL_DIR" ]] || die "安装目标存在但不是目录，拒绝覆盖：$PANEL_INSTALL_DIR"
   log "检测到已有面板目录，先停止旧面板服务。"
@@ -211,6 +215,8 @@ runtime_rollback() {
     rm -rf "$PANEL_ROOT"
     if [[ -n "$RUNTIME_BACKUP" && -d "$RUNTIME_BACKUP" ]]; then mv "$RUNTIME_BACKUP" "$PANEL_ROOT"; fi
   fi
+  if [[ "$OLD_BT_ACTIVE" == 1 ]]; then systemctl start bt.service >/dev/null 2>&1 || true; fi
+  if [[ "$OLD_TASK_ACTIVE" == 1 ]]; then systemctl start bt-task.service >/dev/null 2>&1 || true; fi
   printf '[ERROR] 运行环境安装失败，已尝试回滚面板目录（退出码 %s）。\n' "$rc" >&2
   exit "$rc"
 }
