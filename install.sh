@@ -214,7 +214,7 @@ case "$PYTHON_VERSION" in 3.10|3.11) ;; *) die "当前 Python 为 $PYTHON_VERSIO
 log "使用 Python $PYTHON_VERSION。"
 
 mkdir -p "$ASSET_DIR"
-for asset in scripts/patch_python3.py scripts/run_panel.py scripts/run_task.py requirements-py310.txt systemd/bt.service systemd/bt-task.service; do
+for asset in scripts/patch_python3.py scripts/run_panel.py scripts/run_task.py requirements-py310.txt systemd/bt.service systemd/bt-task.service diagnose.sh upgrade.sh uninstall.sh; do
   mkdir -p "$ASSET_DIR/$(dirname "$asset")"
   curl --fail --location --retry 3 -o "$ASSET_DIR/$asset" "$RUNTIME_RAW/$asset"
 done
