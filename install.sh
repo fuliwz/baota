@@ -264,7 +264,8 @@ for root, dirs, files in os.walk(base):
 if errors:
     for path, err in errors: print(path, err)
     raise SystemExit("Python compile check failed: %d error(s)" % len(errors))
-import flask, werkzeug, gevent, flask_sockets, flask_compress, flask_sqlalchemy, PIL, paramiko, psutil, Crypto.Cipher.AES, dns.resolver, pymysql, libinjection, redis, rarfile, tldextract, libcloud, memcache
+import flask, werkzeug, gevent, geventwebsocket.handler, flask_sockets, flask_compress, flask_sqlalchemy, PIL, paramiko, psutil, Crypto.Cipher.AES, dns.resolver, pymysql, libinjection, redis, rarfile, tldextract, libcloud, memcache
+from OpenSSL import crypto
 print("Python syntax and runtime dependency imports passed.")
 PY
 
