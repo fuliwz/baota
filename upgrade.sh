@@ -63,7 +63,8 @@ for root, dirs, files in os.walk(base):
 if bad:
     for p,e in bad: print(p,e)
     raise SystemExit("Python compile check failed")
-import flask, werkzeug, gevent, flask_sockets, flask_compress, flask_sqlalchemy, PIL, paramiko, psutil, Crypto.Cipher.AES, dns.resolver, pymysql, libinjection, redis, rarfile, tldextract, libcloud, memcache
+import flask, werkzeug, gevent, geventwebsocket.handler, flask_sockets, flask_compress, flask_sqlalchemy, PIL, paramiko, psutil, Crypto.Cipher.AES, dns.resolver, pymysql, libinjection, redis, rarfile, tldextract, libcloud, memcache
+from OpenSSL import crypto
 print("Runtime checks passed.")
 PY
 install -m 0755 "$TMP/scripts/run_panel.py" "$P/run_panel.py"
