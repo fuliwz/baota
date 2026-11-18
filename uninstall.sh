@@ -5,6 +5,7 @@ read -r -p "输入 KEEP 保留面板数据，输入 REMOVE 将面板目录移入
 [[ "$answer" == KEEP || "$answer" == REMOVE ]] || { echo "已取消"; exit 1; }
 systemctl disable --now bt-task bt 2>/dev/null || true
 rm -f /etc/systemd/system/bt.service /etc/systemd/system/bt-task.service
+rm -f /usr/local/bin/bt-diagnose /usr/local/bin/bt-upgrade /usr/local/bin/bt-uninstall
 systemctl daemon-reload
 if [[ "$answer" == REMOVE && -d /www/server/panel ]]; then
   mv /www/server/panel "/www/server/panel.uninstalled.$(date +%Y%m%d%H%M%S)"
