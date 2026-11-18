@@ -7,9 +7,9 @@ umask 077
 
 RELEASE_TAG="v7.4.0"
 REPO="fuliwz/baota"
-EXPECTED_SHA256="请在发布 ZIP 后填写真实 SHA256"
-DEFAULT_ARCHIVE_URL="https://github.com/fuliwz/baota/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
-PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${PANEL_ARCHIVE_URL_DEFAULT}}"
+EXPECTED_SHA256="${EXPECTED_SHA256:-}"
+DEFAULT_ARCHIVE_URL="https://raw.githubusercontent.com/yigexiaoyunwei/BaoTa_History_Release/main/LinuxPanel-7.4.0.zip"
+PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
 PANEL_PORT="${PANEL_PORT:-8888}"
 PANEL_INSTALL_DIR="${PANEL_INSTALL_DIR:-/www/server/panel}"
 WORK_DIR="$(mktemp -d -t bt740-install.XXXXXX)"
