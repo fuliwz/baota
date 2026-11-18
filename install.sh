@@ -161,12 +161,12 @@ chmod -R u+rwX,go-rwx "$PANEL_INSTALL_DIR"
 cat <<EOF
 
 ============================================================
-文件部署完成，但面板尚未启动。
+面板文件部署完成，开始安装 Python 运行环境。
 ============================================================
 面板目录：$PANEL_INSTALL_DIR
 预设端口：$PANEL_PORT
 备份目录：${BACKUP_DIR:-无}
-安装状态：FILES_DEPLOYED_NOT_STARTED
+安装阶段：文件部署完成
 
 阻止启动的原因：
 1. 原始启动器使用旧式 /usr/bin/python；
@@ -177,3 +177,97 @@ cat <<EOF
 请勿直接创建服务并启动，以免产生难以诊断的失败或破坏初始化数据。
 ============================================================
 EOF
+
+
+# ---- Runtime installation layer (development branch) ----
+PANEL_ROOT="$PANEL_INSTALL_DIR"
+ASSET_DIR="$WORK_DIR/runtime-assets"
+RUNTIME_RAW="https://raw.githubusercontent.com/fuliwz/baota/runtime-installer-dev"
+RUNTIME_BACKUP="$BACKUP_DIR"
+RUNTIME_DEPLOYED=1
+runtime_rollback() {
+  local rc=$?
+  systemctl disable --now bt-task.service bt.service >/dev/null 2>&1 || true
+  if [[ "$RUNTIME_DEPLOYED" == 1 ]]; then
+    rm -rf "$PANEL_ROOT"
+    if [[ -n "$RUNTIME_BACKUP" && -d "$RUNTIME_BACKUP" ]]; then mv "$RUNTIME_BACKUP" "$PANEL_ROOT"; fi
+  fi
+  printf '[ERROR] 运行环境安装失败，已尝试回滚面板目录（退出码 %s）。\n' "$rc" >&2
+  exit "$rc"
+}
+trap runtime_rollback ERR
+
+log "安装 Python 构建依赖和运行库。"
+case "$PKG_MANAGER" in
+  apt-get)
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get install -y python3-venv python3-dev build-essential libssl-dev libffi-dev zlib1g-dev libjpeg-dev libxml2-dev libxslt1-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev ;;
+  dnf|yum)
+    "$PKG_MANAGER" install -y python3-devel gcc gcc-c++ make openssl-devel libffi-devel zlib-devel libjpeg-turbo-devel libxml2-devel libxslt-devel sqlite-devel bzip2-devel readline-devel xz-devel ;;
+  zypper)
+    zypper --non-interactive install --no-confirm python3-devel gcc gcc-c++ make libopenssl-devel libffi-devel zlib-devel libjpeg8-devel libxml2-devel libxslt-devel sqlite3-devel libbz2-devel readline-devel xz-devel ;;
+  apk|pacman) die "该发行版的运行时构建依赖尚未验证；不会启动面板。";;
+  *) die "无法为该包管理器安装运行时依赖。";;
+esac
+
+PYTHON_BIN="$(command -v python3)"
+PYTHON_VERSION="$("$PYTHON_BIN" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+case "$PYTHON_VERSION" in 3.10|3.11) ;; *) die "当前 Python 为 $PYTHON_VERSION；首批运行时只接受 Python 3.10/3.11。";; esac
+log "使用 Python $PYTHON_VERSION。"
+
+mkdir -p "$ASSET_DIR"
+for asset in scripts/patch_python3.py scripts/run_panel.py scripts/run_task.py requirements-py310.txt systemd/bt.service systemd/bt-task.service; do
+  mkdir -p "$ASSET_DIR/$(dirname "$asset")"
+  curl --fail --location --retry 3 -o "$ASSET_DIR/$asset" "$RUNTIME_RAW/$asset"
+done
+python3 "$ASSET_DIR/scripts/patch_python3.py"
+
+log "创建独立 Python 虚拟环境并安装锁定依赖。"
+"$PYTHON_BIN" -m venv "$PANEL_ROOT/pyenv"
+"$PANEL_ROOT/pyenv/bin/python" -m pip install --upgrade "pip<25" "setuptools<76" wheel
+"$PANEL_ROOT/pyenv/bin/pip" install --prefer-binary -r "$ASSET_DIR/requirements-py310.txt"
+
+log "执行 Python 语法和关键依赖检查。"
+"$PANEL_ROOT/pyenv/bin/python" - <<'PY'
+import os
+base="/www/server/panel"
+errors=[]
+for root, dirs, files in os.walk(base):
+    dirs[:] = [d for d in dirs if d != "pyenv"]
+    for name in files:
+        if name.endswith(".py"):
+            path=os.path.join(root,name)
+            try:
+                with open(path,"rb") as f: compile(f.read(),path,"exec")
+            except Exception as e: errors.append((path,str(e)))
+if errors:
+    for path, err in errors: print(path, err)
+    raise SystemExit("Python compile check failed: %d error(s)" % len(errors))
+import flask, werkzeug, gevent, flask_sockets, flask_compress, flask_sqlalchemy, PIL, paramiko, psutil
+print("Python syntax and runtime dependency imports passed.")
+PY
+
+install -m 0755 "$ASSET_DIR/scripts/run_panel.py" "$PANEL_ROOT/run_panel.py"
+install -m 0755 "$ASSET_DIR/scripts/run_task.py" "$PANEL_ROOT/run_task.py"
+install -m 0644 "$ASSET_DIR/systemd/bt.service" /etc/systemd/system/bt.service
+install -m 0644 "$ASSET_DIR/systemd/bt-task.service" /etc/systemd/system/bt-task.service
+chmod -R u+rwX,go-rwx "$PANEL_ROOT"
+systemctl daemon-reload
+log "启动面板和任务服务。"
+systemctl enable --now bt.service
+sleep 3
+systemctl is-active --quiet bt.service || { journalctl -u bt.service -n 80 --no-pager; die "面板服务启动失败。"; }
+systemctl enable --now bt-task.service
+sleep 2
+systemctl is-active --quiet bt-task.service || { journalctl -u bt-task.service -n 80 --no-pager; die "任务服务启动失败。"; }
+curl --silent --show-error --max-time 10 "http://127.0.0.1:$PANEL_PORT/service_status" | grep -q True || {
+  journalctl -u bt.service -n 80 --no-pager
+  die "面板 HTTP 健康检查失败。"
+}
+RUNTIME_DEPLOYED=0
+trap on_error ERR
+echo "安装完成：$PANEL_ROOT；Python：$("$PANEL_ROOT/pyenv/bin/python" --version 2>&1)"
+echo "访问地址：http://服务器IP:$PANEL_PORT；旧目录备份：$RUNTIME_BACKUP"
+echo "服务：$(systemctl is-active bt.service) / $(systemctl is-active bt-task.service)"
+echo "日志：journalctl -u bt -u bt-task -n 100 --no-pager"
+echo "云厂商安全组需自行放行 TCP $PANEL_PORT；安装器不会猜测默认管理员密码。"
