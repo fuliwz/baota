@@ -70,13 +70,13 @@ install_prerequisites() {
     apt-get)
       export DEBIAN_FRONTEND=noninteractive
       apt-get update
-      apt-get install -y curl python3 unzip coreutils
+      apt-get install -y ca-certificates curl python3 unzip coreutils
       ;;
-    dnf) dnf install -y curl python3 unzip coreutils ;;
-    yum) yum install -y curl python3 unzip coreutils ;;
-    zypper) zypper --non-interactive refresh; zypper --non-interactive install --no-confirm curl python3 unzip coreutils ;;
-    apk) apk add --no-cache curl python3 unzip coreutils ;;
-    pacman) pacman -Sy --noconfirm --needed curl python unzip coreutils ;;
+    dnf) dnf install -y ca-certificates curl python3 unzip coreutils ;;
+    yum) yum install -y ca-certificates curl python3 unzip coreutils ;;
+    zypper) zypper --non-interactive refresh; zypper --non-interactive install --no-confirm ca-certificates curl python3 unzip coreutils ;;
+    apk) apk add --no-cache ca-certificates curl python3 unzip coreutils ;;
+    pacman) pacman -Sy --noconfirm --needed ca-certificates curl python unzip coreutils ;;
   esac
   command -v curl >/dev/null 2>&1 || die "安装依赖后仍缺少 curl。"
   command -v python3 >/dev/null 2>&1 || die "安装依赖后仍缺少 python3。"
