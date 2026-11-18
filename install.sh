@@ -5,7 +5,6 @@ umask 077
 # 宝塔 7.4.0 部署器（Ubuntu 24.04）
 # 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
 
-REPO="fuliwz/baota"
 RELEASE_TAG="v7.4.0"
 DEFAULT_ARCHIVE_URL="https://github.com/${REPO}/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
 PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
@@ -31,7 +30,6 @@ trap on_error ERR
 
 [[ $EUID -eq 0 ]] || die "请使用 root 运行。"
 command -v curl >/dev/null 2>&1 || die "缺少 curl。请先安装 curl。"
-command -v unzip >/dev/null 2>&1 || die "缺少 unzip。请先安装 unzip。"
 
 if [[ "${SKIP_OS_CHECK:-0}" != "1" ]]; then
   [[ -r /etc/os-release ]] || die "无法读取 /etc/os-release。"
