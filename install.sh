@@ -6,6 +6,7 @@ umask 077
 # 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
 
 RELEASE_TAG="v7.4.0"
+EXPECTED_SHA256="请在发布 ZIP 后填写真实 SHA256"
 DEFAULT_ARCHIVE_URL="https://github.com/fuliwz/baota/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
 PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
 PANEL_PORT="${PANEL_PORT:-8888}"
@@ -52,6 +53,11 @@ curl --fail --location --retry 3 --connect-timeout 20 --max-time 900 \
   || die "下载失败。请确认 GitHub Release 资产已发布，或设置 PANEL_ARCHIVE_URL。"
 
 [[ -s "$ARCHIVE" ]] || die "下载文件为空。"
+if [[ "$EXPECTED_SHA256" != "请在发布 ZIP 后填写真实 SHA256" ]]; then
+  echo "$EXPECTED_SHA256  $ARCHIVE" | sha256sum --check --status || die "ZIP SHA256 校验失败。"
+else
+  warn "尚未配置 Release ZIP 的固定 SHA256；首次发布前必须补充校验值。"
+fi
 command -v python3 >/dev/null 2>&1 || die "缺少 python3。"
 mkdir -p "$EXTRACT_DIR"
 
