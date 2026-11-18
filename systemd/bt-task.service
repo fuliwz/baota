@@ -1,0 +1,14 @@
+[Unit]
+Description=Baota Panel Task 7.4.0
+After=network.target bt.service
+[Service]
+Type=simple
+WorkingDirectory=/www/server/panel
+ExecStart=/www/server/panel/pyenv/bin/python /www/server/panel/run_task.py
+Restart=on-failure
+RestartSec=5
+User=root
+UMask=0077
+Environment=PYTHONUNBUFFERED=1
+[Install]
+WantedBy=multi-user.target
