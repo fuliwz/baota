@@ -48,14 +48,14 @@ systemctl status bt bt-task
 systemctl restart bt
 systemctl restart bt-task
 journalctl -u bt -u bt-task -n 100 --no-pager
-bash diagnose.sh
-bash upgrade.sh
-bash uninstall.sh
+bt-diagnose
+bt-upgrade
+bt-uninstall
 ```
 
-- `diagnose.sh`：输出系统、服务、端口和日志诊断信息。
-- `uninstall.sh`：移除 systemd 服务；选择 REMOVE 时将面板目录移动到备份位置，不会立即永久删除。
-- `upgrade.sh`：备份现有面板后更新运行时补丁、依赖锁和 systemd 启动器；不会替换宝塔 7.4.0 主版本源码。升级流程仍需在真实 VPS 验证。
+- `bt-diagnose`：输出系统、服务、端口和日志诊断信息。
+- `bt-uninstall`：移除 systemd 服务；选择 REMOVE 时将面板目录移动到备份位置，不会立即永久删除。
+- `bt-upgrade`：备份现有面板后更新运行时补丁、依赖锁和 systemd 启动器；不会替换宝塔 7.4.0 主版本源码。升级流程仍需在真实 VPS 验证。
 
 ## 重要说明
 
