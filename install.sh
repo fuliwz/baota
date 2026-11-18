@@ -168,13 +168,8 @@ cat <<EOF
 备份目录：${BACKUP_DIR:-无}
 安装阶段：文件部署完成
 
-阻止启动的原因：
-1. 原始启动器使用旧式 /usr/bin/python；
-2. 原始依赖清单包含年代较早的二进制/源码依赖；
-3. 尚未验证 Python 3.12 兼容性、初始化流程和任务进程行为。
-
-下一步需要针对该 ZIP 完成依赖兼容性测试，再生成 systemd 服务。
-请勿直接创建服务并启动，以免产生难以诊断的失败或破坏初始化数据。
+接下来将安装隔离的 Python 环境、执行语法和依赖检查，并配置 systemd 服务。
+若运行时检查失败，安装器会尝试恢复原面板目录。
 ============================================================
 EOF
 
@@ -187,6 +182,8 @@ RUNTIME_BACKUP="$BACKUP_DIR"
 RUNTIME_DEPLOYED=1
 runtime_rollback() {
   local rc=$?
+  if [[ $# -gt 0 ]]; then rc=$1; fi
+  [[ "$rc" -ne 0 ]] || rc=1
   systemctl disable --now bt-task.service bt.service >/dev/null 2>&1 || true
   if [[ "$RUNTIME_DEPLOYED" == 1 ]]; then
     rm -rf "$PANEL_ROOT"
@@ -196,6 +193,7 @@ runtime_rollback() {
   exit "$rc"
 }
 trap runtime_rollback ERR
+die(){ printf '[ERROR] %s\n' "$*" >&2; runtime_rollback 1; }
 
 log "安装 Python 构建依赖和运行库。"
 case "$PKG_MANAGER" in
