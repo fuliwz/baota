@@ -22,3 +22,14 @@ chardet==5.2.0
 pyOpenSSL==23.2.0
 cryptography==41.0.7
 six==1.16.0
+# Additional modules referenced by Panel 7.4.0 source (core or optional features)
+Cython==0.29.37
+libinjection-python==1.1.6
+dnspython==2.6.1
+pycryptodome==3.20.0
+PyMySQL==1.1.0
+redis==5.0.3
+rarfile==4.1
+tldextract==5.1.2
+apache-libcloud==3.8.0
+python-memcached==1.62
