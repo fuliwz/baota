@@ -192,11 +192,21 @@ ASSET_DIR="$WORK_DIR/runtime-assets"
 RUNTIME_RAW="https://raw.githubusercontent.com/fuliwz/baota/runtime-installer-dev"
 RUNTIME_BACKUP="$BACKUP_DIR"
 RUNTIME_DEPLOYED=1
+UNIT_BACKUP="$WORK_DIR/old-systemd-units"
+mkdir -p "$UNIT_BACKUP"
+for unit in bt.service bt-task.service; do
+  [[ -f "/etc/systemd/system/$unit" ]] && cp -a "/etc/systemd/system/$unit" "$UNIT_BACKUP/$unit"
+done
 runtime_rollback() {
   local rc=$?
+  trap - ERR
   if [[ $# -gt 0 ]]; then rc=$1; fi
   [[ "$rc" -ne 0 ]] || rc=1
   systemctl disable --now bt-task.service bt.service >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/bt.service /etc/systemd/system/bt-task.service
+  cp -a "$UNIT_BACKUP/." /etc/systemd/system/ 2>/dev/null || true
+  rm -f /usr/local/bin/bt-diagnose /usr/local/bin/bt-upgrade /usr/local/bin/bt-uninstall
+  systemctl daemon-reload >/dev/null 2>&1 || true
   if [[ "$RUNTIME_DEPLOYED" == 1 ]]; then
     rm -rf "$PANEL_ROOT"
     if [[ -n "$RUNTIME_BACKUP" && -d "$RUNTIME_BACKUP" ]]; then mv "$RUNTIME_BACKUP" "$PANEL_ROOT"; fi
