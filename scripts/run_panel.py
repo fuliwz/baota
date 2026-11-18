@@ -19,6 +19,16 @@ def main():
         try: ctx.set_ciphers("ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE")
         except ssl.SSLError: pass
         kwargs["ssl_context"] = ctx
-    WSGIServer((host, port), app, **kwargs).serve_forever()
+    pid_path = "logs/panel.pid"
+    os.makedirs("logs", exist_ok=True)
+    with open(pid_path, "w", encoding="utf-8") as f:
+        f.write(str(os.getpid()))
+    try:
+        WSGIServer((host, port), app, **kwargs).serve_forever()
+    finally:
+        try:
+            os.remove(pid_path)
+        except OSError:
+            pass
 
 if __name__ == "__main__": main()
