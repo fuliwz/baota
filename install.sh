@@ -6,6 +6,7 @@ umask 077
 # 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
 
 RELEASE_TAG="v7.4.0"
+REPO="fuliwz/baota"
 EXPECTED_SHA256="请在发布 ZIP 后填写真实 SHA256"
 DEFAULT_ARCHIVE_URL="https://github.com/fuliwz/baota/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
 PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
