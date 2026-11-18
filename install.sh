@@ -6,7 +6,7 @@ umask 077
 # 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
 
 RELEASE_TAG="v7.4.0"
-DEFAULT_ARCHIVE_URL="https://github.com/${REPO}/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
+DEFAULT_ARCHIVE_URL="https://github.com/fuliwz/baota/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
 PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
 PANEL_PORT="${PANEL_PORT:-8888}"
 PANEL_INSTALL_DIR="${PANEL_INSTALL_DIR:-/www/server/panel}"
