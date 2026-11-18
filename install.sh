@@ -30,17 +30,63 @@ on_error() {
 trap on_error ERR
 
 [[ $EUID -eq 0 ]] || die "请使用 root 运行。"
-command -v curl >/dev/null 2>&1 || die "缺少 curl。请先安装 curl。"
 
-if [[ "${SKIP_OS_CHECK:-0}" != "1" ]]; then
-  [[ -r /etc/os-release ]] || die "无法读取 /etc/os-release。"
+# Detect the distribution and package manager. This installer stages files only;
+# it deliberately does not claim that this legacy panel runtime works everywhere.
+OS_ID="unknown"
+OS_VERSION="unknown"
+OS_PRETTY="未知 Linux"
+OS_LIKE=""
+if [[ -r /etc/os-release ]]; then
   . /etc/os-release
-  [[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "24.04" ]] || die "仅允许 Ubuntu 24.04；检测到 ${PRETTY_NAME:-未知系统}。"
-  case "$(dpkg --print-architecture)" in
-    amd64|arm64) ;;
-    *) die "当前架构暂不支持：$(dpkg --print-architecture)" ;;
-  esac
+  OS_ID="${ID:-unknown}"
+  OS_VERSION="${VERSION_ID:-unknown}"
+  OS_PRETTY="${PRETTY_NAME:-$OS_ID $OS_VERSION}"
+  OS_LIKE="${ID_LIKE:-}"
 fi
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64|amd64|aarch64|arm64) ;;
+  *) die "当前 CPU 架构暂不支持：$ARCH（仅支持 x86_64/amd64/aarch64/arm64）。" ;;
+esac
+
+PKG_MANAGER=""
+for pm in apt-get dnf yum zypper apk pacman; do
+  if command -v "$pm" >/dev/null 2>&1; then PKG_MANAGER="$pm"; break; fi
+done
+
+install_prerequisites() {
+  local missing=()
+  command -v curl >/dev/null 2>&1 || missing+=(curl)
+  command -v python3 >/dev/null 2>&1 || missing+=(python3)
+  command -v unzip >/dev/null 2>&1 || missing+=(unzip)
+  if [[ -n "${EXPECTED_SHA256:-}" ]]; then
+    command -v sha256sum >/dev/null 2>&1 || missing+=(sha256sum)
+  fi
+  (("${#missing[@]}" == 0)) && return 0
+  [[ -n "$PKG_MANAGER" ]] || die "缺少必要命令：${missing[*]}；且未检测到受支持的包管理器，无法自动补齐。"
+  log "使用 $PKG_MANAGER 安装必要工具：${missing[*]}"
+  case "$PKG_MANAGER" in
+    apt-get)
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y curl python3 unzip coreutils
+      ;;
+    dnf) dnf install -y curl python3 unzip coreutils ;;
+    yum) yum install -y curl python3 unzip coreutils ;;
+    zypper) zypper --non-interactive refresh; zypper --non-interactive install --no-confirm curl python3 unzip coreutils ;;
+    apk) apk add --no-cache curl python3 unzip coreutils ;;
+    pacman) pacman -Sy --noconfirm --needed curl python unzip coreutils ;;
+  esac
+  command -v curl >/dev/null 2>&1 || die "安装依赖后仍缺少 curl。"
+  command -v python3 >/dev/null 2>&1 || die "安装依赖后仍缺少 python3。"
+  command -v unzip >/dev/null 2>&1 || die "安装依赖后仍缺少 unzip。"
+}
+install_prerequisites
+
+log "检测到系统：$OS_PRETTY"
+log "系统标识：$OS_ID $OS_VERSION；架构：$ARCH；包管理器：${PKG_MANAGER:-未检测到}"
+log "注意：当前安装器仅负责安全部署面板文件，不代表该旧版面板已兼容此 Linux 发行版。"
 
 [[ "$PANEL_PORT" =~ ^[0-9]{1,5}$ ]] || die "PANEL_PORT 必须是 1-65535 的数字。"
 (( PANEL_PORT >= 1 && PANEL_PORT <= 65535 )) || die "PANEL_PORT 超出范围。"
