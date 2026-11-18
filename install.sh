@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 umask 077
 
-# 宝塔 7.4.0 部署器（Ubuntu 24.04）
+# 宝塔 7.4.0 文件部署器（多发行版 Linux；运行兼容性需单独验证）
 # 此脚本只在兼容性未经验证时完成预检和安全部署，不伪报启动成功。
 
 RELEASE_TAG="v7.4.0"
@@ -63,7 +63,7 @@ install_prerequisites() {
   if [[ -n "${EXPECTED_SHA256:-}" ]]; then
     command -v sha256sum >/dev/null 2>&1 || missing+=(sha256sum)
   fi
-  (("${#missing[@]}" == 0)) && return 0
+  if (("${#missing[@]}" == 0)); then return 0; fi
   [[ -n "$PKG_MANAGER" ]] || die "缺少必要命令：${missing[*]}；且未检测到受支持的包管理器，无法自动补齐。"
   log "使用 $PKG_MANAGER 安装必要工具：${missing[*]}"
   case "$PKG_MANAGER" in
