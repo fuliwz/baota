@@ -142,6 +142,8 @@ mkdir -p /www/server /www/wwwroot /www/wwwlogs /www/backup/database /www/backup/
 
 if [[ -e "$PANEL_INSTALL_DIR" ]]; then
   [[ -d "$PANEL_INSTALL_DIR" ]] || die "安装目标存在但不是目录，拒绝覆盖：$PANEL_INSTALL_DIR"
+  log "检测到已有面板目录，先停止旧面板服务。"
+  systemctl stop bt-task.service bt.service 2>/dev/null || true
   BACKUP_DIR="/www/server/panel.backup.$(date +%Y%m%d%H%M%S)"
   log "备份现有面板目录到：$BACKUP_DIR"
   mv "$PANEL_INSTALL_DIR" "$BACKUP_DIR"
@@ -150,6 +152,16 @@ fi
 if ! cp -a "$EXTRACT_DIR/panel" "$PANEL_INSTALL_DIR"; then
   [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]] && mv "$BACKUP_DIR" "$PANEL_INSTALL_DIR"
   die "复制面板文件失败；已尝试恢复原目录。"
+fi
+
+# Preserve user data and local configuration when replacing an existing tree.
+if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
+  for persistent in data config ssl logs plugin; do
+    if [[ -e "$BACKUP_DIR/$persistent" ]]; then
+      rm -rf "$PANEL_INSTALL_DIR/$persistent"
+      cp -a "$BACKUP_DIR/$persistent" "$PANEL_INSTALL_DIR/$persistent"
+    fi
+  done
 fi
 
 mkdir -p "$PANEL_INSTALL_DIR/logs"
