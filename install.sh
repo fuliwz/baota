@@ -9,7 +9,7 @@ RELEASE_TAG="v7.4.0"
 REPO="fuliwz/baota"
 EXPECTED_SHA256="请在发布 ZIP 后填写真实 SHA256"
 DEFAULT_ARCHIVE_URL="https://github.com/fuliwz/baota/releases/download/${RELEASE_TAG}/LinuxPanel-7.4.0.zip"
-PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
+PANEL_ARCHIVE_URL="${PANEL_ARCHIVE_URL:-${PANEL_ARCHIVE_URL_DEFAULT}}"
 PANEL_PORT="${PANEL_PORT:-8888}"
 PANEL_INSTALL_DIR="${PANEL_INSTALL_DIR:-/www/server/panel}"
 WORK_DIR="$(mktemp -d -t bt740-install.XXXXXX)"
@@ -54,10 +54,11 @@ curl --fail --location --retry 3 --connect-timeout 20 --max-time 900 \
   || die "下载失败。请确认 GitHub Release 资产已发布，或设置 PANEL_ARCHIVE_URL。"
 
 [[ -s "$ARCHIVE" ]] || die "下载文件为空。"
-if [[ "$EXPECTED_SHA256" != "请在发布 ZIP 后填写真实 SHA256" ]]; then
+if [[ -n "$EXPECTED_SHA256" ]]; then
+  [[ "$EXPECTED_SHA256" =~ ^[a-fA-F0-9]{64}$ ]] || die "EXPECTED_SHA256 必须是 64 位十六进制 SHA256。"
   echo "$EXPECTED_SHA256  $ARCHIVE" | sha256sum --check --status || die "ZIP SHA256 校验失败。"
 else
-  warn "尚未配置 Release ZIP 的固定 SHA256；首次发布前必须补充校验值。"
+  warn "未设置 EXPECTED_SHA256。建议先核实源归档 SHA256，再固定校验值。"
 fi
 command -v python3 >/dev/null 2>&1 || die "缺少 python3。"
 mkdir -p "$EXTRACT_DIR"
