@@ -47,6 +47,7 @@ done
 systemctl stop bt-task bt
 python3 "$TMP/scripts/patch_python3.py"
 "$P/pyenv/bin/pip" install --prefer-binary -r "$TMP/requirements-py310.txt"
+"$P/pyenv/bin/pip" check
 "$P/pyenv/bin/python" - <<'PY'
 import os
 base="/www/server/panel"
